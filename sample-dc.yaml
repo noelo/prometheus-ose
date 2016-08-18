@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+  creationTimestamp: null
+  labels:
+    app: prometheus
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    app: prometheus
+    deploymentconfig: prometheus
+  strategy:
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      annotations:
+        openshift.io/container.prometheus.image.entrypoint: '["/bin/prometheus","-config.file=/etc/prometheus/config/prometheus.yml","-storage.local.path=/prometheus","-web.console.libraries=/etc/prometheus/console_libraries","-web.console.templates=/etc/prometheus/consoles"]'
+        openshift.io/generated-by: OpenShiftNewApp
+      creationTimestamp: null
+      labels:
+        app: prometheus
+        deploymentconfig: prometheus
+    spec:
+      containers:
+      - args:
+        - -config.file=/etc/prometheus/config/prometheus.yml
+        - -storage.local.path=/prometheus
+        - -web.console.libraries=/etc/prometheus/console_libraries
+        - -web.console.templates=/etc/prometheus/consoles
+        image: prom/prometheus@sha256:a64323c501bcbe02cac64195a3d33deb9207f3cc0152364a0452bec3ea0a8dca
+        imagePullPolicy: Always
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /prometheus
+          name: prometheus-volume-1
+        - mountPath: /etc/prometheus/config
+          name: config-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: prometheus-volume-1
+      - configMap:
+          name: prometheus
+        name: config-volume
+  test: false
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - prometheus
+      from:
+        kind: ImageStreamTag
+        name: prometheus:latest
+    type: ImageChange
+status: {}
